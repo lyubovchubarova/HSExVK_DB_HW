@@ -1,0 +1,75 @@
+services:
+  namenode:
+    image: hadoop-cluster-image:3.3.6
+    container_name: namenode
+    restart: always
+    ports:
+      - "9870:9870"
+      - "8020:8020"
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+    env_file:
+      - ./hadoop.env
+    networks:
+      hadoop:
+        aliases:
+          - master
+
+  datanode:
+    image: hadoop-cluster-image:3.3.6
+    container_name: datanode
+    depends_on:
+      - namenode
+    restart: always
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    env_file:
+      - ./hadoop.env
+    networks:
+      - hadoop
+
+  resourcemanager:
+    image: hadoop-cluster-image:3.3.6
+    container_name: resourcemanager
+    depends_on:
+      - namenode
+    restart: always
+    ports:
+      - "8088:8088"
+    command: yarn resourcemanager
+    env_file:
+      - ./hadoop.env
+    networks:
+      hadoop:
+        aliases:
+          - master
+
+  nodemanager:
+    image: hadoop-cluster-image:3.3.6
+    container_name: nodemanager
+    depends_on:
+      - resourcemanager
+    restart: always
+    command: yarn nodemanager
+    env_file:
+      - ./hadoop.env
+    networks:
+      - hadoop
+
+  client:
+    image: hadoop-cluster-image:3.3.6
+    container_name: hadoop-task-client
+    depends_on:
+      - namenode
+      - resourcemanager
+    env_file:
+      - ./hadoop.env
+    entrypoint: /app/entrypoint.sh 
+
+networks:
+  hadoop:
+    driver: bridge
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
